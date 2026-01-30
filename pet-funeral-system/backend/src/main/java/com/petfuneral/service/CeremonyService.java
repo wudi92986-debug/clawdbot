@@ -271,19 +271,19 @@ public class CeremonyService {
      * 检查时间冲突
      */
     private void checkTimeConflict(String hallNo, LocalDateTime startTime, LocalDateTime endTime, Long excludeId) {
-        if (endTime == null) {
-            endTime = startTime.plusHours(1);
-        }
+        // 使用 final 变量以便在 lambda 中使用
+        final LocalDateTime finalStartTime = startTime;
+        final LocalDateTime finalEndTime = (endTime == null) ? startTime.plusHours(1) : endTime;
         
         LambdaQueryWrapper<Ceremony> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Ceremony::getHallNo, hallNo)
                .ne(Ceremony::getStatus, 4) // 排除已取消
                .and(w -> w
-                   .between(Ceremony::getStartTime, startTime, endTime)
+                   .between(Ceremony::getStartTime, finalStartTime, finalEndTime)
                    .or()
-                   .between(Ceremony::getEndTime, startTime, endTime)
+                   .between(Ceremony::getEndTime, finalStartTime, finalEndTime)
                    .or()
-                   .apply("start_time <= {0} AND end_time >= {1}", startTime, endTime)
+                   .apply("start_time <= {0} AND end_time >= {1}", finalStartTime, finalEndTime)
                );
         
         if (excludeId != null) {
