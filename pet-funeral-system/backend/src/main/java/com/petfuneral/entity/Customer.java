@@ -13,9 +13,29 @@ import lombok.EqualsAndHashCode;
 public class Customer extends BaseEntity {
 
     /**
+     * 客户姓名
+     */
+    private String name;
+
+    /**
      * 手机号
      */
     private String phone;
+
+    /**
+     * 邮箱
+     */
+    private String email;
+
+    /**
+     * 身份证号
+     */
+    private String idCard;
+
+    /**
+     * 地址
+     */
+    private String address;
 
     /**
      * 昵称
@@ -41,6 +61,11 @@ public class Customer extends BaseEntity {
      * 积分
      */
     private Integer points;
+
+    /**
+     * 备注
+     */
+    private String remark;
 
     /**
      * 状态 1-正常 0-禁用

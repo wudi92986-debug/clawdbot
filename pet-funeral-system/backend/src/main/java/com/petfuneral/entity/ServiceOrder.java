@@ -56,6 +56,16 @@ public class ServiceOrder extends BaseEntity {
     private Integer payStatus;
 
     /**
+     * 支付方式 1-微信 2-支付宝 3-银行卡 4-现金
+     */
+    private Integer payMethod;
+
+    /**
+     * 支付时间
+     */
+    private LocalDateTime payTime;
+
+    /**
      * 预约时间
      */
     private LocalDateTime appointmentTime;
