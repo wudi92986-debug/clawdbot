@@ -1,0 +1,251 @@
+// 宠物殡葬管理系统 - 全局样式
+// 设计风格：温暖、治愈、有仪式感
+
+// ==================== 颜色变量 ====================
+:root {
+  // 主色调 - 温暖棕色系
+  --color-primary: #8B7355;
+  --color-primary-light: #A89076;
+  --color-primary-lighter: #C5B49A;
+  --color-primary-dark: #6D5A44;
+
+  // 辅助色 - 治愈绿
+  --color-success: #A8C686;
+  --color-success-light: #C4D9A8;
+
+  // 强调色 - 柔和橙
+  --color-warning: #E8B89D;
+  --color-warning-light: #F2D4C2;
+
+  // 错误色 - 柔和红
+  --color-danger: #E49B9B;
+  --color-danger-light: #F2C4C4;
+
+  // 信息色
+  --color-info: #909399;
+  --color-info-light: #C8C9CC;
+
+  // 背景色
+  --bg-color: #FAF8F5;
+  --bg-color-page: #F5F3F0;
+  --bg-color-card: #FFFFFF;
+  --bg-color-overlay: rgba(0, 0, 0, 0.5);
+
+  // 文字颜色
+  --text-color-primary: #4A4A4A;
+  --text-color-regular: #606266;
+  --text-color-secondary: #909399;
+  --text-color-placeholder: #C0C4CC;
+
+  // 边框颜色
+  --border-color: #E4E7ED;
+  --border-color-light: #EBEEF5;
+  --border-color-lighter: #F2F6FC;
+
+  // 阴影
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  // 圆角
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  // 间距
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+// ==================== 全局重置 ====================
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: 14px;
+  color: var(--text-color-primary);
+  background-color: var(--bg-color);
+}
+
+// ==================== Element Plus 主题覆盖 ====================
+.el-button--primary {
+  --el-button-bg-color: var(--color-primary);
+  --el-button-border-color: var(--color-primary);
+  --el-button-hover-bg-color: var(--color-primary-light);
+  --el-button-hover-border-color: var(--color-primary-light);
+  --el-button-active-bg-color: var(--color-primary-dark);
+  --el-button-active-border-color: var(--color-primary-dark);
+}
+
+.el-menu {
+  --el-menu-active-color: var(--color-primary);
+  --el-menu-hover-bg-color: var(--color-primary-lighter);
+}
+
+.el-pagination {
+  --el-pagination-button-bg-color: var(--bg-color-card);
+  --el-pagination-hover-color: var(--color-primary);
+}
+
+// ==================== 通用类 ====================
+.page-container {
+  padding: var(--spacing-lg);
+  background-color: var(--bg-color-page);
+  min-height: calc(100vh - 60px);
+}
+
+.card {
+  background-color: var(--bg-color-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 16px;
+    background-color: var(--color-primary);
+    border-radius: 2px;
+    margin-right: var(--spacing-sm);
+  }
+}
+
+// 统计卡片
+.stat-card {
+  background: linear-gradient(135deg, var(--color-primary-lighter), var(--color-primary-light));
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  color: #fff;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  &.success {
+    background: linear-gradient(135deg, var(--color-success-light), var(--color-success));
+  }
+
+  &.warning {
+    background: linear-gradient(135deg, var(--color-warning-light), var(--color-warning));
+  }
+
+  &.info {
+    background: linear-gradient(135deg, var(--color-info-light), var(--color-info));
+  }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .stat-label {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-top: var(--spacing-sm);
+  }
+
+  .stat-trend {
+    font-size: 12px;
+    margin-top: var(--spacing-xs);
+    opacity: 0.8;
+  }
+}
+
+// 状态标签
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+
+  &.pending {
+    background-color: #FFF7E6;
+    color: #FA8C16;
+  }
+
+  &.processing {
+    background-color: #E6F7FF;
+    color: #1890FF;
+  }
+
+  &.completed {
+    background-color: #F6FFED;
+    color: #52C41A;
+  }
+
+  &.cancelled {
+    background-color: #FFF1F0;
+    color: #F5222D;
+  }
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+    background-color: currentColor;
+  }
+}
+
+// ==================== 动画 ====================
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+// ==================== 滚动条美化 ====================
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--bg-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-primary-lighter);
+  border-radius: 4px;
+
+  &:hover {
+    background-color: var(--color-primary-light);
+  }
+}
