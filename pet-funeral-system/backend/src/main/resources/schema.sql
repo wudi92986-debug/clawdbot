@@ -214,3 +214,51 @@ INSERT INTO customer (phone, nickname, member_level, points, status) VALUES
 INSERT INTO pet (customer_id, name, species, breed, gender, birthday, weight, status, death_date, death_reason) VALUES 
 (1, '豆豆', 'dog', '金毛寻回犬', 1, '2018-03-15', 32.00, 2, '2025-12-20', '器官衰竭'),
 (2, '咪咪', 'cat', '英国短毛猫', 2, '2020-06-10', 5.50, 2, '2026-01-25', '自然老去');
+
+-- =============================================
+-- 告别仪式表
+-- =============================================
+CREATE TABLE IF NOT EXISTS ceremony (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    order_id BIGINT COMMENT '订单ID',
+    pet_id BIGINT COMMENT '宠物ID',
+    customer_id BIGINT COMMENT '客户ID',
+    ceremony_type TINYINT DEFAULT 1 COMMENT '仪式类型 1-简约告别 2-温馨告别 3-尊享告别',
+    hall_no VARCHAR(20) COMMENT '仪式厅编号',
+    start_time DATETIME COMMENT '开始时间',
+    end_time DATETIME COMMENT '结束时间',
+    attendee_count INT COMMENT '参加人数',
+    host VARCHAR(50) COMMENT '主持人',
+    staff_id BIGINT COMMENT '负责员工ID',
+    special_requests TEXT COMMENT '特殊要求',
+    remark TEXT COMMENT '备注',
+    status TINYINT DEFAULT 0 COMMENT '状态 0-待安排 1-已安排 2-进行中 3-已完成 4-已取消',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    deleted TINYINT DEFAULT 0 COMMENT '逻辑删除',
+    INDEX idx_order_id (order_id),
+    INDEX idx_start_time (start_time),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='告别仪式表';
+
+-- =============================================
+-- 上传文件表
+-- =============================================
+CREATE TABLE IF NOT EXISTS upload_file (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    original_name VARCHAR(255) COMMENT '原始文件名',
+    storage_name VARCHAR(255) COMMENT '存储文件名',
+    file_path VARCHAR(500) COMMENT '文件路径',
+    file_url VARCHAR(500) COMMENT '文件URL',
+    file_type VARCHAR(20) COMMENT '文件类型 image/video/document',
+    mime_type VARCHAR(100) COMMENT 'MIME类型',
+    file_size BIGINT COMMENT '文件大小(字节)',
+    thumb_url VARCHAR(500) COMMENT '缩略图URL',
+    module VARCHAR(50) COMMENT '所属模块',
+    biz_id BIGINT COMMENT '关联业务ID',
+    upload_user_id BIGINT COMMENT '上传用户ID',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    deleted TINYINT DEFAULT 0 COMMENT '逻辑删除',
+    INDEX idx_module_biz (module, biz_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='上传文件表';

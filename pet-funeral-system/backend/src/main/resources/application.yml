@@ -66,3 +66,10 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
+
+# 文件上传配置
+file:
+  upload:
+    path: ./uploads
+    base-url: /uploads
+    max-size: 10485760
