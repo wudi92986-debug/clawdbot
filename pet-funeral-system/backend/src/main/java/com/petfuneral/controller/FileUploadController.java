@@ -75,7 +75,7 @@ public class FileUploadController {
     @DeleteMapping("/{fileId}")
     public Result<Void> deleteFile(@PathVariable Long fileId) {
         fileUploadService.deleteFile(fileId);
-        return Result.success("删除成功");
+        return Result.ok("删除成功");
     }
 
     @Operation(summary = "获取业务相关的文件")

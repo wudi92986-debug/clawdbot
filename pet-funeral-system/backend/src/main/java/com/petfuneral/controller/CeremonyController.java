@@ -57,21 +57,21 @@ public class CeremonyController {
     @PutMapping("/{id}")
     public Result<Void> updateCeremony(@PathVariable Long id, @Valid @RequestBody CeremonyCreateRequest request) {
         ceremonyService.updateCeremony(id, request);
-        return Result.success("更新成功");
+        return Result.ok("更新成功");
     }
 
     @Operation(summary = "开始仪式")
     @PostMapping("/{id}/start")
     public Result<Void> startCeremony(@PathVariable Long id) {
         ceremonyService.startCeremony(id);
-        return Result.success("仪式已开始");
+        return Result.ok("仪式已开始");
     }
 
     @Operation(summary = "完成仪式")
     @PostMapping("/{id}/complete")
     public Result<Void> completeCeremony(@PathVariable Long id) {
         ceremonyService.completeCeremony(id);
-        return Result.success("仪式已完成");
+        return Result.ok("仪式已完成");
     }
 
     @Operation(summary = "取消仪式")
@@ -80,7 +80,7 @@ public class CeremonyController {
             @PathVariable Long id,
             @RequestParam(required = false) String reason) {
         ceremonyService.cancelCeremony(id, reason);
-        return Result.success("仪式已取消");
+        return Result.ok("仪式已取消");
     }
 
     @Operation(summary = "获取某日日程")

@@ -51,7 +51,7 @@ public class PublicController {
     public Result<Void> lightCandle(@PathVariable String urlKey) {
         Memorial memorial = memorialService.getMemorialByUrlKey(urlKey);
         memorialService.lightCandle(memorial.getId());
-        return Result.success("已点亮蜡烛");
+        return Result.ok("已点亮蜡烛");
     }
 
     @Operation(summary = "纪念馆献花 (公开)")
@@ -59,6 +59,6 @@ public class PublicController {
     public Result<Void> offerFlower(@PathVariable String urlKey) {
         Memorial memorial = memorialService.getMemorialByUrlKey(urlKey);
         memorialService.offerFlower(memorial.getId());
-        return Result.success("已献上鲜花");
+        return Result.ok("已献上鲜花");
     }
 }

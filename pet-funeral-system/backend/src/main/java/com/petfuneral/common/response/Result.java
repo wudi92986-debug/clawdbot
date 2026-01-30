@@ -20,7 +20,7 @@ public class Result<T> implements Serializable {
     }
 
     public static <T> Result<T> success() {
-        return success(null);
+        return success("操作成功", null);
     }
 
     public static <T> Result<T> success(T data) {
@@ -32,6 +32,17 @@ public class Result<T> implements Serializable {
         result.setCode(200);
         result.setMessage(message);
         result.setData(data);
+        return result;
+    }
+
+    /**
+     * 只返回消息，不返回数据
+     */
+    public static Result<Void> ok(String message) {
+        Result<Void> result = new Result<>();
+        result.setCode(200);
+        result.setMessage(message);
+        result.setData(null);
         return result;
     }
 

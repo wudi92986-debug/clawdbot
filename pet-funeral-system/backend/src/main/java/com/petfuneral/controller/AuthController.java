@@ -30,8 +30,8 @@ public class AuthController {
 
     @Operation(summary = "初始化管理员 (仅用于首次部署)")
     @PostMapping("/init")
-    public Result<Void> initAdmin() {
+    public Result<String> initAdmin() {
         authService.createAdmin("admin", "123456", "系统管理员");
-        return Result.success("初始化成功，用户名: admin，密码: 123456");
+        return Result.success("初始化成功", "用户名: admin，密码: 123456");
     }
 }

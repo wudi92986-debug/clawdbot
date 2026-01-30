@@ -61,21 +61,21 @@ public class PetController {
     @PutMapping("/{id}")
     public Result<Void> updatePet(@PathVariable Long id, @Valid @RequestBody PetCreateRequest request) {
         petService.updatePet(id, request);
-        return Result.success("更新成功");
+        return Result.ok("更新成功");
     }
 
     @Operation(summary = "登记宠物离世")
     @PostMapping("/{id}/death")
     public Result<Void> registerDeath(@PathVariable Long id, @Valid @RequestBody PetDeathRequest request) {
         petService.registerDeath(id, request);
-        return Result.success("登记成功");
+        return Result.ok("登记成功");
     }
 
     @Operation(summary = "删除宠物")
     @DeleteMapping("/{id}")
     public Result<Void> deletePet(@PathVariable Long id) {
         petService.deletePet(id);
-        return Result.success("删除成功");
+        return Result.ok("删除成功");
     }
 
     @Operation(summary = "统计宠物数量")

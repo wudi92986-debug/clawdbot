@@ -64,14 +64,14 @@ public class AshStorageController {
             @PathVariable Long id,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newEndDate) {
         ashStorageService.renew(id, newEndDate);
-        return Result.success("续期成功");
+        return Result.ok("续期成功");
     }
 
     @Operation(summary = "取走骨灰")
     @PostMapping("/{id}/pickup")
     public Result<Void> pickup(@PathVariable Long id) {
         ashStorageService.pickup(id);
-        return Result.success("已登记取走");
+        return Result.ok("已登记取走");
     }
 
     @Operation(summary = "获取即将到期的寄存记录")

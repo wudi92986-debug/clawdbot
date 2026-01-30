@@ -50,13 +50,13 @@ public class PackageController {
     public Result<Void> updatePackage(@PathVariable Long id, @RequestBody ServicePackage servicePackage) {
         servicePackage.setId(id);
         packageService.updatePackage(servicePackage);
-        return Result.success("更新成功");
+        return Result.ok("更新成功");
     }
 
     @Operation(summary = "上架/下架套餐")
     @PostMapping("/{id}/toggle")
     public Result<Void> toggleStatus(@PathVariable Long id) {
         packageService.toggleStatus(id);
-        return Result.success("操作成功");
+        return Result.ok("操作成功");
     }
 }

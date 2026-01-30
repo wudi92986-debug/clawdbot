@@ -58,14 +58,14 @@ public class MemorialController {
     @PostMapping("/{id}/candle")
     public Result<Void> lightCandle(@PathVariable Long id) {
         memorialService.lightCandle(id);
-        return Result.success("已点亮蜡烛");
+        return Result.ok("已点亮蜡烛");
     }
 
     @Operation(summary = "献花")
     @PostMapping("/{id}/flower")
     public Result<Void> offerFlower(@PathVariable Long id) {
         memorialService.offerFlower(id);
-        return Result.success("已献上鲜花");
+        return Result.ok("已献上鲜花");
     }
 
     @Operation(summary = "添加留言")

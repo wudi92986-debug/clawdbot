@@ -59,7 +59,7 @@ public class OrderController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserPrincipal user) {
         orderService.confirmOrder(id, user.getUserId());
-        return Result.success("订单已确认");
+        return Result.ok("订单已确认");
     }
 
     @Operation(summary = "取消订单")
@@ -68,14 +68,14 @@ public class OrderController {
             @PathVariable Long id,
             @RequestParam(required = false) String reason) {
         orderService.cancelOrder(id, reason);
-        return Result.success("订单已取消");
+        return Result.ok("订单已取消");
     }
 
     @Operation(summary = "完成订单")
     @PostMapping("/{id}/complete")
     public Result<Void> completeOrder(@PathVariable Long id) {
         orderService.completeOrder(id);
-        return Result.success("订单已完成");
+        return Result.ok("订单已完成");
     }
 
     @Operation(summary = "统计订单数量")
