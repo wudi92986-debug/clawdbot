@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petfuneral.mapper.ServiceOrderMapper">
+
+    <!-- 分页查询订单列表 -->
+    <select id="selectOrderPage" resultType="com.petfuneral.dto.OrderListDTO">
+        SELECT
+            o.id,
+            o.order_no,
+            o.customer_id,
+            c.nickname AS customer_name,
+            c.phone AS customer_phone,
+            o.pet_id,
+            p.name AS pet_name,
+            p.breed AS pet_breed,
+            sp.name AS package_name,
+            o.total_amount,
+            o.paid_amount,
+            o.status,
+            o.pay_status,
+            o.appointment_time,
+            o.created_at
+        FROM service_order o
+        LEFT JOIN customer c ON o.customer_id = c.id
+        LEFT JOIN pet p ON o.pet_id = p.id
+        LEFT JOIN service_package sp ON o.package_id = sp.id
+        WHERE o.deleted = 0
+        <if test="status != null">
+            AND o.status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                o.order_no LIKE CONCAT('%', #{keyword}, '%')
+                OR c.nickname LIKE CONCAT('%', #{keyword}, '%')
+                OR p.name LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        ORDER BY o.created_at DESC
+    </select>
+
+</mapper>
