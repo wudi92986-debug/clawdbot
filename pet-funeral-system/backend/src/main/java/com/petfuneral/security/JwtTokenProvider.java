@@ -31,11 +31,11 @@ public class JwtTokenProvider {
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
         return Jwts.builder()
-                .subject(String.valueOf(userId))
+                .setSubject(String.valueOf(userId))
                 .claim("username", username)
-                .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(getSigningKey())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -43,11 +43,11 @@ public class JwtTokenProvider {
      * 从 Token 中获取用户ID
      */
     public Long getUserIdFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigningKey())
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseClaimsJws(token)
+                .getBody();
 
         return Long.parseLong(claims.getSubject());
     }
@@ -56,11 +56,11 @@ public class JwtTokenProvider {
      * 从 Token 中获取用户名
      */
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigningKey())
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseClaimsJws(token)
+                .getBody();
 
         return claims.get("username", String.class);
     }
@@ -70,10 +70,10 @@ public class JwtTokenProvider {
      */
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                    .verifyWith(getSigningKey())
+            Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
                     .build()
-                    .parseSignedClaims(token);
+                    .parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             log.warn("Invalid JWT token: {}", e.getMessage());

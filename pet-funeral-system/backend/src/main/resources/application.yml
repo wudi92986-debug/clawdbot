@@ -12,14 +12,6 @@ spring:
     username: root
     password: 123456
 
-  # Redis 配置
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      password:
-      database: 0
-
   # 文件上传配置
   servlet:
     multipart:
@@ -49,8 +41,8 @@ mybatis-plus:
 
 # JWT 配置
 jwt:
-  secret: pet-funeral-secret-key-2026-very-long-and-secure-string
-  expiration: 86400000  # 24小时 (毫秒)
+  secret: pet-funeral-secret-key-2026-very-long-and-secure-string-must-be-at-least-256-bits
+  expiration: 86400000
   header: Authorization
   prefix: "Bearer "
 
