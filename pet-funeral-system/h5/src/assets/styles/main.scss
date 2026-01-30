@@ -1,0 +1,141 @@
+// 宠物殡葬 H5 客户端 - 全局样式
+// 设计风格：温暖、治愈、简洁
+
+// ==================== 颜色变量 ====================
+:root {
+  // 主色调
+  --color-primary: #8B7355;
+  --color-primary-light: #A89076;
+  --color-primary-lighter: #C5B49A;
+
+  // 辅助色
+  --color-success: #A8C686;
+  --color-warning: #E8B89D;
+  --color-danger: #E49B9B;
+
+  // 背景色
+  --bg-color: #FAF8F5;
+  --bg-color-card: #FFFFFF;
+
+  // 文字颜色
+  --text-color: #4A4A4A;
+  --text-color-secondary: #909399;
+  --text-color-light: #C0C4CC;
+
+  // 边框
+  --border-color: #EBEEF5;
+
+  // 间距
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  // 圆角
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-round: 50%;
+}
+
+// ==================== 全局重置 ====================
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  -webkit-font-smoothing: antialiased;
+}
+
+// ==================== Vant 主题覆盖 ====================
+:root {
+  --van-primary-color: #8B7355;
+  --van-success-color: #A8C686;
+  --van-warning-color: #E8B89D;
+  --van-danger-color: #E49B9B;
+  --van-background: #FAF8F5;
+  --van-background-2: #FFFFFF;
+  --van-text-color: #4A4A4A;
+  --van-text-color-2: #909399;
+  --van-text-color-3: #C0C4CC;
+  --van-border-color: #EBEEF5;
+  --van-padding-md: 16px;
+  --van-button-border-radius: 8px;
+  --van-cell-background: #FFFFFF;
+}
+
+// ==================== 通用类 ====================
+.page {
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  padding-bottom: calc(50px + env(safe-area-inset-bottom));
+}
+
+.page-header {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: #fff;
+  padding: var(--spacing-lg);
+  padding-top: calc(var(--spacing-lg) + env(safe-area-inset-top));
+}
+
+.card {
+  background-color: var(--bg-color-card);
+  border-radius: var(--radius-lg);
+  margin: var(--spacing-md);
+  padding: var(--spacing-md);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: center;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 14px;
+    background-color: var(--color-primary);
+    border-radius: 2px;
+    margin-right: var(--spacing-sm);
+  }
+}
+
+// ==================== 底部导航适配 ====================
+.van-tabbar {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+// ==================== 动画 ====================
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+// ==================== 滚动条隐藏（移动端） ====================
+::-webkit-scrollbar {
+  display: none;
+}
