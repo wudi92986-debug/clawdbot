@@ -192,30 +192,6 @@ CREATE TABLE IF NOT EXISTS ash_storage (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='骨灰寄存表';
 
 -- =============================================
--- 初始化数据
--- =============================================
-
--- 初始化管理员 (密码: 123456)
-INSERT INTO sys_user (username, password, real_name, status) VALUES 
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '系统管理员', 1);
-
--- 初始化服务套餐
-INSERT INTO service_package (name, description, base_price, icon, sort_order, status) VALUES 
-('基础告别', '集体火化，不保留骨灰', 1280.00, '🌿', 1, 1),
-('温馨告别', '含告别仪式+单独火化+骨灰盒', 2980.00, '🌸', 2, 1),
-('尊享告别', 'VIP全套服务+纪念相册+AI纪念视频', 5980.00, '💫', 3, 1);
-
--- 初始化测试客户
-INSERT INTO customer (phone, nickname, member_level, points, status) VALUES 
-('13800138001', '豆豆麻麻', 2, 2580, 1),
-('13800138002', '咪咪粑粑', 1, 890, 1);
-
--- 初始化测试宠物
-INSERT INTO pet (customer_id, name, species, breed, gender, birthday, weight, status, death_date, death_reason) VALUES 
-(1, '豆豆', 'dog', '金毛寻回犬', 1, '2018-03-15', 32.00, 2, '2025-12-20', '器官衰竭'),
-(2, '咪咪', 'cat', '英国短毛猫', 2, '2020-06-10', 5.50, 2, '2026-01-25', '自然老去');
-
--- =============================================
 -- 告别仪式表
 -- =============================================
 CREATE TABLE IF NOT EXISTS ceremony (
@@ -262,3 +238,27 @@ CREATE TABLE IF NOT EXISTS upload_file (
     deleted TINYINT DEFAULT 0 COMMENT '逻辑删除',
     INDEX idx_module_biz (module, biz_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='上传文件表';
+
+-- =============================================
+-- 初始化数据 (所有表创建完成后执行)
+-- =============================================
+
+-- 初始化管理员 (密码: 123456)
+INSERT INTO sys_user (username, password, real_name, status) VALUES 
+('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '系统管理员', 1);
+
+-- 初始化服务套餐
+INSERT INTO service_package (name, description, base_price, icon, sort_order, status) VALUES 
+('基础告别', '集体火化，不保留骨灰', 1280.00, '🌿', 1, 1),
+('温馨告别', '含告别仪式+单独火化+骨灰盒', 2980.00, '🌸', 2, 1),
+('尊享告别', 'VIP全套服务+纪念相册+AI纪念视频', 5980.00, '💫', 3, 1);
+
+-- 初始化测试客户
+INSERT INTO customer (phone, nickname, member_level, points, status) VALUES 
+('13800138001', '豆豆麻麻', 2, 2580, 1),
+('13800138002', '咪咪粑粑', 1, 890, 1);
+
+-- 初始化测试宠物
+INSERT INTO pet (customer_id, name, species, breed, gender, birthday, weight, status, death_date, death_reason) VALUES 
+(1, '豆豆', 'dog', '金毛寻回犬', 1, '2018-03-15', 32.00, 2, '2025-12-20', '器官衰竭'),
+(2, '咪咪', 'cat', '英国短毛猫', 2, '2020-06-10', 5.50, 2, '2026-01-25', '自然老去');
