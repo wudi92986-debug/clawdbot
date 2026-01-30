@@ -1,75 +1,344 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Plus, Edit, Delete } from '@element-plus/icons-vue'
+import { getPackageList, createPackage, updatePackage, deletePackage, type ServicePackage } from '@/api/package'
 
-const packages = ref([
-  { id: 1, name: '基础告别', price: 1280, description: '集体火化，不保留骨灰', includes: ['遗容整理', '集体火化'], status: 'active' },
-  { id: 2, name: '温馨告别', price: 2980, description: '含告别仪式+单独火化', includes: ['上门接运', '遗容整理', '告别仪式', '单独火化', '骨灰盒'], status: 'active' },
-  { id: 3, name: '尊享告别', price: 5980, description: 'VIP全套服务+纪念相册', includes: ['专车接运', '高级美容', 'VIP告别厅', '单独火化', '高端骨灰盒', '纪念相册', 'AI纪念视频'], status: 'active' },
-])
+// 搜索关键词
+const searchKeyword = ref('')
+const loading = ref(false)
+
+// 套餐列表数据
+const packages = ref<ServicePackage[]>([])
+const total = ref(0)
+
+// 分页参数
+const pagination = reactive({
+  page: 1,
+  pageSize: 10
+})
+
+// 弹窗控制
+const dialogVisible = ref(false)
+const dialogTitle = ref('新增套餐')
+
+// 表单数据
+const formData = reactive<ServicePackage>({
+  name: '',
+  description: '',
+  price: 0,
+  originalPrice: 0,
+  duration: 0,
+  items: '',
+  sort: 0,
+  status: 1
+})
+
+// 表单引用
+const formRef = ref()
+
+// 表单验证规则
+const rules = {
+  name: [{ required: true, message: '请输入套餐名称', trigger: 'blur' }],
+  price: [{ required: true, message: '请输入价格', trigger: 'blur' }]
+}
+
+// 获取套餐列表
+const fetchPackages = async () => {
+  loading.value = true
+  try {
+    const res = await getPackageList({
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      keyword: searchKeyword.value
+    })
+    packages.value = res.data?.records || []
+    total.value = res.data?.total || 0
+  } catch (error) {
+    console.error('获取套餐列表失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 搜索
+const handleSearch = () => {
+  pagination.page = 1
+  fetchPackages()
+}
+
+// 新增套餐
+const handleAdd = () => {
+  dialogTitle.value = '新增套餐'
+  resetForm()
+  dialogVisible.value = true
+}
+
+// 编辑套餐
+const handleEdit = (row: ServicePackage) => {
+  dialogTitle.value = '编辑套餐'
+  Object.assign(formData, row)
+  dialogVisible.value = true
+}
+
+// 删除套餐
+const handleDelete = async (row: ServicePackage) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该套餐吗？', '提示', {
+      type: 'warning'
+    })
+    await deletePackage(row.id!)
+    ElMessage.success('删除成功')
+    fetchPackages()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+    }
+  }
+}
+
+// 提交表单
+const handleSubmit = async () => {
+  if (!formRef.value) return
+  
+  try {
+    await formRef.value.validate()
+    
+    if (formData.id) {
+      await updatePackage(formData.id, formData)
+      ElMessage.success('更新成功')
+    } else {
+      await createPackage(formData)
+      ElMessage.success('创建成功')
+    }
+    
+    dialogVisible.value = false
+    fetchPackages()
+  } catch (error: any) {
+    if (error !== false) {
+      console.error('提交失败:', error)
+    }
+  }
+}
+
+// 重置表单
+const resetForm = () => {
+  formData.id = undefined
+  formData.name = ''
+  formData.description = ''
+  formData.price = 0
+  formData.originalPrice = 0
+  formData.duration = 0
+  formData.items = ''
+  formData.sort = 0
+  formData.status = 1
+}
+
+// 关闭弹窗
+const handleClose = () => {
+  dialogVisible.value = false
+  resetForm()
+}
+
+// 分页变化
+const handlePageChange = (page: number) => {
+  pagination.page = page
+  fetchPackages()
+}
+
+const handleSizeChange = (size: number) => {
+  pagination.pageSize = size
+  pagination.page = 1
+  fetchPackages()
+}
+
+onMounted(() => {
+  fetchPackages()
+})
 </script>
 
 <template>
   <div class="service-container">
     <div class="page-header">
-      <h1 class="page-title">服务套餐</h1>
-      <el-button type="primary">
+      <h1 class="page-title">服务套餐管理</h1>
+      <el-button type="primary" @click="handleAdd">
         <el-icon><Plus /></el-icon>
         新增套餐
       </el-button>
     </div>
 
-    <div class="package-grid">
-      <div v-for="pkg in packages" :key="pkg.id" class="package-card">
-        <div class="package-header">
-          <h3>{{ pkg.name }}</h3>
-          <el-tag type="success" effect="light">上架中</el-tag>
-        </div>
-        <div class="package-price">
-          <span class="currency">¥</span>
-          <span class="amount">{{ pkg.price.toLocaleString() }}</span>
-          <span class="unit">起</span>
-        </div>
-        <p class="package-desc">{{ pkg.description }}</p>
-        <div class="package-includes">
-          <div v-for="item in pkg.includes" :key="item" class="include-item">
-            <el-icon color="#A8C686"><CircleCheckFilled /></el-icon>
-            {{ item }}
-          </div>
-        </div>
-        <div class="package-actions">
-          <el-button type="primary" plain>编辑</el-button>
-          <el-button>下架</el-button>
-        </div>
+    <div class="card">
+      <div class="search-bar">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="搜索套餐名称"
+          clearable
+          style="width: 300px"
+          @keyup.enter="handleSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-button type="primary" style="margin-left: 16px" @click="handleSearch">搜索</el-button>
+      </div>
+
+      <el-table :data="packages" v-loading="loading" style="width: 100%; margin-top: 20px">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="name" label="套餐名称" min-width="150" />
+        <el-table-column prop="price" label="价格" min-width="100">
+          <template #default="{ row }">
+            <span style="color: #E8B89D; font-weight: 600">¥{{ row.price?.toLocaleString() || 0 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="originalPrice" label="原价" min-width="100">
+          <template #default="{ row }">
+            <span style="text-decoration: line-through; color: #999">
+              ¥{{ row.originalPrice?.toLocaleString() || 0 }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="status" label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'info'" effect="light">
+              {{ row.status === 1 ? '上架' : '下架' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sort" label="排序" width="80" />
+        <el-table-column label="操作" width="150" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link @click="handleEdit(row)">
+              <el-icon><Edit /></el-icon> 编辑
+            </el-button>
+            <el-button type="danger" link @click="handleDelete(row)">
+              <el-icon><Delete /></el-icon> 删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 分页 -->
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
+        />
       </div>
     </div>
+
+    <!-- 新增/编辑弹窗 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="600px"
+      @close="handleClose"
+    >
+      <el-form
+        ref="formRef"
+        :model="formData"
+        :rules="rules"
+        label-width="80px"
+      >
+        <el-form-item label="套餐名称" prop="name">
+          <el-input v-model="formData.name" placeholder="请输入套餐名称" />
+        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="价格" prop="price">
+              <el-input-number v-model="formData.price" :min="0" :precision="2" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="原价" prop="originalPrice">
+              <el-input-number v-model="formData.originalPrice" :min="0" :precision="2" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="时长(分)" prop="duration">
+              <el-input-number v-model="formData.duration" :min="0" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="排序" prop="sort">
+              <el-input-number v-model="formData.sort" :min="0" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="formData.status">
+            <el-radio :value="1">上架</el-radio>
+            <el-radio :value="0">下架</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="描述" prop="description">
+          <el-input v-model="formData.description" type="textarea" :rows="2" placeholder="请输入套餐描述" />
+        </el-form-item>
+        <el-form-item label="服务项目" prop="items">
+          <el-input v-model="formData.items" type="textarea" :rows="4" placeholder="请输入服务项目，每行一项" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="handleClose">取消</el-button>
+        <el-button type="primary" @click="handleSubmit">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
-<script lang="ts">
-import { Plus } from '@element-plus/icons-vue'
-export default { data() { return { Plus } } }
-</script>
-
 <style lang="scss" scoped>
-.service-container { animation: fadeIn 0.3s ease; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg); }
-.page-title { font-size: 24px; font-weight: 600; color: var(--text-color-primary); margin: 0; }
-.package-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--spacing-lg); }
-.package-card {
-  background-color: var(--bg-color-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: var(--spacing-xl);
-  .package-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);
-    h3 { margin: 0; font-size: 20px; color: var(--text-color-primary); }
-  }
-  .package-price { margin-bottom: var(--spacing-md);
-    .currency { font-size: 16px; color: var(--color-warning); }
-    .amount { font-size: 32px; font-weight: 700; color: var(--color-warning); }
-    .unit { font-size: 14px; color: var(--text-color-secondary); }
-  }
-  .package-desc { color: var(--text-color-secondary); margin-bottom: var(--spacing-md); }
-  .package-includes { margin-bottom: var(--spacing-lg);
-    .include-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 14px; color: var(--text-color-primary); }
-  }
-  .package-actions { display: flex; gap: var(--spacing-sm); }
+.service-container {
+  animation: fadeIn 0.3s ease;
 }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+  margin: 0;
+}
+
+.card {
+  background-color: var(--bg-color-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 </style>

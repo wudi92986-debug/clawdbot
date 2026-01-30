@@ -1,352 +1,252 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { login } from '@/api/auth'
 
 const router = useRouter()
-
-const formRef = ref<FormInstance>()
 const loading = ref(false)
 
-const form = reactive({
+const formData = reactive({
   username: '',
-  password: '',
-  captcha: '',
-  remember: false,
+  password: ''
 })
 
-const rules: FormRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' },
-  ],
-  captcha: [
-    { required: true, message: '请输入验证码', trigger: 'blur' },
-  ],
+const formRef = ref()
+
+const rules = {
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
-// 验证码
-const captchaCode = ref('A3K9')
-const refreshCaptcha = () => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let code = ''
-  for (let i = 0; i < 4; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  captchaCode.value = code
-}
-
-// 登录
 const handleLogin = async () => {
   if (!formRef.value) return
-
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      // 验证码校验
-      if (form.captcha.toUpperCase() !== captchaCode.value) {
-        ElMessage.error('验证码错误')
-        refreshCaptcha()
-        return
-      }
-
-      loading.value = true
-
-      // 模拟登录请求
-      setTimeout(() => {
-        // 模拟登录成功
-        localStorage.setItem('token', 'mock-token-' + Date.now())
-        ElMessage.success('登录成功')
-        router.push('/dashboard')
-        loading.value = false
-      }, 1000)
-    }
-  })
+  
+  try {
+    await formRef.value.validate()
+    loading.value = true
+    
+    const res = await login({
+      username: formData.username,
+      password: formData.password
+    })
+    
+    // 保存 token
+    localStorage.setItem('token', res.data.token)
+    localStorage.setItem('username', res.data.username)
+    localStorage.setItem('nickname', res.data.nickname || res.data.username)
+    
+    ElMessage.success('登录成功')
+    router.push('/')
+  } catch (error: any) {
+    console.error('登录失败:', error)
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
 <template>
   <div class="login-container">
-    <!-- 背景装饰 -->
-    <div class="bg-decoration">
-      <div class="circle circle-1"></div>
-      <div class="circle circle-2"></div>
-      <div class="circle circle-3"></div>
+    <div class="login-bg">
+      <div class="bg-shape shape-1"></div>
+      <div class="bg-shape shape-2"></div>
+      <div class="bg-shape shape-3"></div>
     </div>
-
-    <!-- 登录卡片 -->
+    
     <div class="login-card">
-      <!-- Logo -->
-      <div class="logo">
-        <span class="logo-icon">🐾</span>
-        <h1 class="logo-title">宠爱天堂</h1>
-        <p class="logo-subtitle">宠物殡葬管理系统</p>
+      <div class="login-header">
+        <div class="logo">
+          <span class="logo-icon">🐾</span>
+        </div>
+        <h1 class="title">宠物殡葬管理系统</h1>
+        <p class="subtitle">用爱陪伴 · 温暖告别</p>
       </div>
-
-      <!-- 登录表单 -->
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
+      
+      <el-form 
+        ref="formRef" 
+        :model="formData" 
+        :rules="rules" 
         class="login-form"
-        @submit.prevent="handleLogin"
+        @keyup.enter="handleLogin"
       >
         <el-form-item prop="username">
           <el-input
-            v-model="form.username"
+            v-model="formData.username"
             placeholder="请输入用户名"
             size="large"
-            :prefix-icon="User"
+            prefix-icon="User"
           />
         </el-form-item>
-
+        
         <el-form-item prop="password">
           <el-input
-            v-model="form.password"
+            v-model="formData.password"
             type="password"
             placeholder="请输入密码"
             size="large"
-            :prefix-icon="Lock"
+            prefix-icon="Lock"
             show-password
           />
         </el-form-item>
-
-        <el-form-item prop="captcha">
-          <div class="captcha-row">
-            <el-input
-              v-model="form.captcha"
-              placeholder="请输入验证码"
-              size="large"
-              :prefix-icon="Key"
-              class="captcha-input"
-            />
-            <div class="captcha-code" @click="refreshCaptcha">
-              {{ captchaCode }}
-            </div>
-          </div>
-        </el-form-item>
-
-        <el-form-item>
-          <div class="form-options">
-            <el-checkbox v-model="form.remember">记住我</el-checkbox>
-            <a href="#" class="forgot-link">忘记密码?</a>
-          </div>
-        </el-form-item>
-
+        
         <el-form-item>
           <el-button
             type="primary"
             size="large"
-            :loading="loading"
             class="login-btn"
-            native-type="submit"
+            :loading="loading"
+            @click="handleLogin"
           >
             {{ loading ? '登录中...' : '登 录' }}
           </el-button>
         </el-form-item>
       </el-form>
-
-      <!-- 底部 -->
+      
       <div class="login-footer">
-        <p>遇到问题？<a href="#">联系管理员</a></p>
+        <p>默认账号: admin / 123456</p>
       </div>
-    </div>
-
-    <!-- 版权信息 -->
-    <div class="copyright">
-      © 2026 宠爱天堂 版权所有
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import { User, Lock, Key } from '@element-plus/icons-vue'
-export default {
-  components: { User, Lock, Key },
-  data() {
-    return { User, Lock, Key }
-  }
-}
-</script>
 
 <style lang="scss" scoped>
 .login-container {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #FAF8F5 0%, #F0EBE3 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   position: relative;
   overflow: hidden;
 }
 
-// 背景装饰
-.bg-decoration {
+.login-bg {
   position: absolute;
   inset: 0;
-  pointer-events: none;
   overflow: hidden;
-
-  .circle {
+  
+  .bg-shape {
     position: absolute;
     border-radius: 50%;
     opacity: 0.1;
+    background: white;
   }
-
-  .circle-1 {
+  
+  .shape-1 {
     width: 400px;
     height: 400px;
-    background-color: var(--color-primary);
     top: -100px;
-    right: -100px;
+    left: -100px;
+    animation: float 8s ease-in-out infinite;
   }
-
-  .circle-2 {
+  
+  .shape-2 {
     width: 300px;
     height: 300px;
-    background-color: var(--color-success);
     bottom: -50px;
-    left: -50px;
+    right: -50px;
+    animation: float 6s ease-in-out infinite reverse;
   }
-
-  .circle-3 {
+  
+  .shape-3 {
     width: 200px;
     height: 200px;
-    background-color: var(--color-warning);
     top: 50%;
-    left: 10%;
+    left: 60%;
+    animation: float 10s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
   }
 }
 
 .login-card {
-  width: 420px;
-  background-color: #fff;
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  padding: 48px 40px;
+  width: 400px;
+  padding: 40px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   position: relative;
   z-index: 1;
 }
 
-.logo {
+.login-header {
   text-align: center;
   margin-bottom: 40px;
-
-  .logo-icon {
-    font-size: 48px;
-    display: block;
-    margin-bottom: var(--spacing-sm);
+  
+  .logo {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    .logo-icon {
+      font-size: 40px;
+    }
   }
-
-  .logo-title {
-    font-size: 28px;
+  
+  .title {
+    font-size: 24px;
     font-weight: 600;
-    color: var(--color-primary);
-    margin: 0 0 var(--spacing-xs);
+    color: #1a1a2e;
+    margin: 0 0 8px;
   }
-
-  .logo-subtitle {
+  
+  .subtitle {
     font-size: 14px;
-    color: var(--text-color-secondary);
+    color: #6b7280;
     margin: 0;
   }
 }
 
 .login-form {
   :deep(.el-input__wrapper) {
-    border-radius: var(--radius-md);
-    box-shadow: 0 0 0 1px var(--border-color) inset;
-
-    &:hover,
-    &.is-focus {
-      box-shadow: 0 0 0 1px var(--color-primary) inset;
+    border-radius: 10px;
+    box-shadow: 0 0 0 1px #e5e7eb;
+    
+    &:hover, &.is-focus {
+      box-shadow: 0 0 0 1px #667eea;
     }
   }
-}
-
-.captcha-row {
-  display: flex;
-  gap: var(--spacing-md);
-  width: 100%;
-
-  .captcha-input {
-    flex: 1;
-  }
-
-  .captcha-code {
-    width: 120px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--color-primary-lighter), var(--color-primary-light));
-    border-radius: var(--radius-md);
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 4px;
-    color: #fff;
-    cursor: pointer;
-    user-select: none;
-
-    &:hover {
-      opacity: 0.9;
-    }
-  }
-}
-
-.form-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-
-  .forgot-link {
-    color: var(--color-primary);
-    text-decoration: none;
-    font-size: 14px;
-
-    &:hover {
-      text-decoration: underline;
-    }
+  
+  :deep(.el-form-item) {
+    margin-bottom: 20px;
   }
 }
 
 .login-btn {
   width: 100%;
-  height: 44px;
+  height: 48px;
+  border-radius: 10px;
   font-size: 16px;
-  border-radius: var(--radius-md);
+  font-weight: 500;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  
+  &:hover {
+    background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+  }
 }
 
 .login-footer {
   text-align: center;
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-lg);
-  border-top: 1px solid var(--border-color-light);
-
+  margin-top: 20px;
+  
   p {
-    color: var(--text-color-secondary);
-    font-size: 14px;
+    font-size: 12px;
+    color: #9ca3af;
     margin: 0;
-
-    a {
-      color: var(--color-primary);
-      text-decoration: none;
-
-      &:hover {
-        text-decoration: underline;
-      }
-    }
   }
-}
-
-.copyright {
-  position: absolute;
-  bottom: 24px;
-  color: var(--text-color-secondary);
-  font-size: 12px;
 }
 </style>

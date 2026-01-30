@@ -1,434 +1,477 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Plus, View } from '@element-plus/icons-vue'
+import { getOrderList, createOrder, cancelOrder, confirmPayment, completeOrder, type Order } from '@/api/order'
+import { getCustomerList } from '@/api/customer'
+import { getPetList } from '@/api/pet'
+import { getPackageList } from '@/api/package'
 
 const router = useRouter()
-const route = useRoute()
 
-// 搜索表单
-const searchForm = reactive({
-  keyword: '',
-  dateRange: [],
-  status: '',
-  package: '',
-  staff: '',
-})
-
-// 订单状态选项
-const statusOptions = [
-  { label: '待确认', value: 'pending' },
-  { label: '待接运', value: 'pickup' },
-  { label: '服务中', value: 'processing' },
-  { label: '已完成', value: 'completed' },
-  { label: '已取消', value: 'cancelled' },
-]
-
-// 套餐选项
-const packageOptions = [
-  { label: '基础告别', value: 'basic' },
-  { label: '温馨告别', value: 'warm' },
-  { label: '尊享告别', value: 'premium' },
-]
-
-// 当前 Tab
-const activeTab = ref('all')
-
-// 加载状态
+// 搜索
+const searchKeyword = ref('')
+const searchStatus = ref<number | ''>('')
 const loading = ref(false)
 
-// 分页
+// 订单列表数据
+const orders = ref<Order[]>([])
+const total = ref(0)
+
+// 选项数据
+const customerOptions = ref<any[]>([])
+const petOptions = ref<any[]>([])
+const packageOptions = ref<any[]>([])
+
+// 分页参数
 const pagination = reactive({
   page: 1,
-  pageSize: 10,
-  total: 156,
+  pageSize: 10
 })
 
-// 模拟订单数据
-const orders = ref([
-  {
-    id: 1,
-    orderNo: 'PF20260130001',
-    customer: '李女士',
-    customerPhone: '138****8888',
-    pet: '豆豆',
-    petType: '金毛寻回犬',
-    package: '温馨告别',
-    amount: 2980,
-    paidAmount: 500,
-    status: 'pending',
-    appointmentTime: '2026-01-30 10:00',
-    createdAt: '2026-01-30 09:15',
-  },
-  {
-    id: 2,
-    orderNo: 'PF20260130002',
-    customer: '王先生',
-    customerPhone: '139****6666',
-    pet: '咪咪',
-    petType: '英国短毛猫',
-    package: '基础告别',
-    amount: 1280,
-    paidAmount: 1280,
-    status: 'processing',
-    appointmentTime: '2026-01-30 14:00',
-    createdAt: '2026-01-29 20:30',
-  },
-  {
-    id: 3,
-    orderNo: 'PF20260129003',
-    customer: '张女士',
-    customerPhone: '137****5555',
-    pet: '球球',
-    petType: '泰迪',
-    package: '尊享告别',
-    amount: 5980,
-    paidAmount: 5980,
-    status: 'completed',
-    appointmentTime: '2026-01-29 09:00',
-    createdAt: '2026-01-28 15:20',
-  },
-  {
-    id: 4,
-    orderNo: 'PF20260129004',
-    customer: '陈先生',
-    customerPhone: '136****4444',
-    pet: '旺财',
-    petType: '柴犬',
-    package: '温馨告别',
-    amount: 2980,
-    paidAmount: 500,
-    status: 'pickup',
-    appointmentTime: '2026-01-30 15:30',
-    createdAt: '2026-01-29 18:45',
-  },
-  {
-    id: 5,
-    orderNo: 'PF20260128005',
-    customer: '刘女士',
-    customerPhone: '135****3333',
-    pet: '小白',
-    petType: '布偶猫',
-    package: '基础告别',
-    amount: 1280,
-    paidAmount: 1280,
-    status: 'completed',
-    appointmentTime: '2026-01-28 11:00',
-    createdAt: '2026-01-27 22:10',
-  },
-])
+// 弹窗控制
+const dialogVisible = ref(false)
+const payDialogVisible = ref(false)
 
-// 选中的订单
-const selectedOrders = ref<number[]>([])
+// 表单数据
+const formData = reactive<Order>({
+  customerId: 0,
+  petId: 0,
+  packageId: 0,
+  serviceDate: '',
+  remark: ''
+})
 
-// 获取状态文本
-const getStatusText = (status: string) => {
-  const map: Record<string, string> = {
-    pending: '待确认',
-    pickup: '待接运',
-    processing: '服务中',
-    completed: '已完成',
-    cancelled: '已取消',
-  }
-  return map[status] || status
+// 支付表单
+const payForm = reactive({
+  orderId: 0,
+  payMethod: 1,
+  paidAmount: 0
+})
+
+// 表单引用
+const formRef = ref()
+
+// 状态映射
+const statusMap: Record<number, { text: string; type: string }> = {
+  0: { text: '待支付', type: 'warning' },
+  1: { text: '已支付', type: 'success' },
+  2: { text: '服务中', type: 'primary' },
+  3: { text: '已完成', type: 'info' },
+  4: { text: '已取消', type: 'danger' }
 }
 
-// 获取状态类型
-const getStatusType = (status: string) => {
-  const map: Record<string, string> = {
-    pending: 'warning',
-    pickup: 'info',
-    processing: 'primary',
-    completed: 'success',
-    cancelled: 'danger',
+// 支付方式
+const payMethods = [
+  { value: 1, label: '微信支付' },
+  { value: 2, label: '支付宝' },
+  { value: 3, label: '银行卡' },
+  { value: 4, label: '现金' }
+]
+
+// 表单验证规则
+const rules = {
+  customerId: [{ required: true, message: '请选择客户', trigger: 'change' }],
+  petId: [{ required: true, message: '请选择宠物', trigger: 'change' }],
+  packageId: [{ required: true, message: '请选择服务套餐', trigger: 'change' }],
+  serviceDate: [{ required: true, message: '请选择服务日期', trigger: 'change' }]
+}
+
+// 获取订单列表
+const fetchOrders = async () => {
+  loading.value = true
+  try {
+    const res = await getOrderList({
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      keyword: searchKeyword.value,
+      status: searchStatus.value === '' ? undefined : searchStatus.value
+    })
+    orders.value = res.data?.records || []
+    total.value = res.data?.total || 0
+  } catch (error) {
+    console.error('获取订单列表失败:', error)
+  } finally {
+    loading.value = false
   }
-  return map[status] || 'info'
+}
+
+// 获取选项数据
+const fetchOptions = async () => {
+  try {
+    const [customerRes, packageRes] = await Promise.all([
+      getCustomerList({ pageSize: 1000 }),
+      getPackageList({ pageSize: 1000 })
+    ])
+    customerOptions.value = customerRes.data?.records || []
+    packageOptions.value = packageRes.data?.records || []
+  } catch (error) {
+    console.error('获取选项数据失败:', error)
+  }
+}
+
+// 客户变化时获取宠物列表
+const handleCustomerChange = async (customerId: number) => {
+  formData.petId = 0
+  if (customerId) {
+    try {
+      const res = await getPetList({ customerId, pageSize: 100 })
+      petOptions.value = res.data?.records || []
+    } catch (error) {
+      console.error('获取宠物列表失败:', error)
+    }
+  } else {
+    petOptions.value = []
+  }
 }
 
 // 搜索
 const handleSearch = () => {
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-  }, 500)
+  pagination.page = 1
+  fetchOrders()
 }
 
-// 重置
-const handleReset = () => {
-  Object.assign(searchForm, {
-    keyword: '',
-    dateRange: [],
-    status: '',
-    package: '',
-    staff: '',
-  })
-  handleSearch()
+// 新增订单
+const handleAdd = () => {
+  resetForm()
+  dialogVisible.value = true
 }
 
 // 查看详情
-const handleView = (row: any) => {
+const handleDetail = (row: Order) => {
   router.push(`/order/detail/${row.id}`)
 }
 
-// 确认订单
-const handleConfirm = (row: any) => {
-  ElMessageBox.confirm(`确定要确认订单 ${row.orderNo} 吗？`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  }).then(() => {
-    ElMessage.success('订单已确认')
-  })
-}
-
-// 批量确认
-const handleBatchConfirm = () => {
-  if (selectedOrders.value.length === 0) {
-    ElMessage.warning('请先选择订单')
-    return
+// 取消订单
+const handleCancel = async (row: Order) => {
+  try {
+    await ElMessageBox.confirm('确定要取消该订单吗？', '提示', {
+      type: 'warning'
+    })
+    await cancelOrder(row.id!)
+    ElMessage.success('取消成功')
+    fetchOrders()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('取消失败:', error)
+    }
   }
-  ElMessageBox.confirm(`确定要批量确认 ${selectedOrders.value.length} 个订单吗？`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  }).then(() => {
-    ElMessage.success('订单已批量确认')
-  })
 }
 
-// 导出
-const handleExport = () => {
-  ElMessage.success('正在导出...')
+// 打开支付弹窗
+const handlePay = (row: Order) => {
+  payForm.orderId = row.id!
+  payForm.paidAmount = row.totalAmount || 0
+  payForm.payMethod = 1
+  payDialogVisible.value = true
 }
 
-// 选择变化
-const handleSelectionChange = (rows: any[]) => {
-  selectedOrders.value = rows.map((r) => r.id)
+// 确认支付
+const submitPay = async () => {
+  try {
+    await confirmPayment(payForm.orderId, {
+      payMethod: payForm.payMethod,
+      paidAmount: payForm.paidAmount
+    })
+    ElMessage.success('支付确认成功')
+    payDialogVisible.value = false
+    fetchOrders()
+  } catch (error) {
+    console.error('支付确认失败:', error)
+  }
+}
+
+// 完成订单
+const handleComplete = async (row: Order) => {
+  try {
+    await ElMessageBox.confirm('确定要完成该订单吗？', '提示', {
+      type: 'info'
+    })
+    await completeOrder(row.id!)
+    ElMessage.success('订单已完成')
+    fetchOrders()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('操作失败:', error)
+    }
+  }
+}
+
+// 提交表单
+const handleSubmit = async () => {
+  if (!formRef.value) return
+  
+  try {
+    await formRef.value.validate()
+    await createOrder(formData)
+    ElMessage.success('创建成功')
+    dialogVisible.value = false
+    fetchOrders()
+  } catch (error: any) {
+    if (error !== false) {
+      console.error('提交失败:', error)
+    }
+  }
+}
+
+// 重置表单
+const resetForm = () => {
+  formData.customerId = 0
+  formData.petId = 0
+  formData.packageId = 0
+  formData.serviceDate = ''
+  formData.remark = ''
+  petOptions.value = []
+}
+
+// 关闭弹窗
+const handleClose = () => {
+  dialogVisible.value = false
+  resetForm()
 }
 
 // 分页变化
 const handlePageChange = (page: number) => {
   pagination.page = page
-  handleSearch()
+  fetchOrders()
 }
 
 const handleSizeChange = (size: number) => {
   pagination.pageSize = size
   pagination.page = 1
-  handleSearch()
+  fetchOrders()
 }
+
+onMounted(() => {
+  fetchOrders()
+  fetchOptions()
+})
 </script>
 
 <template>
-  <div class="order-list-container">
-    <!-- 搜索区域 -->
-    <div class="card search-card">
-      <el-form :model="searchForm" inline>
-        <el-form-item label="">
-          <el-input
-            v-model="searchForm.keyword"
-            placeholder="订单号/宠物名/客户名"
-            clearable
-            style="width: 200px"
-            :prefix-icon="Search"
-          />
-        </el-form-item>
-        <el-form-item label="">
-          <el-date-picker
-            v-model="searchForm.dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            style="width: 240px"
-          />
-        </el-form-item>
-        <el-form-item label="">
-          <el-select v-model="searchForm.status" placeholder="订单状态" clearable style="width: 120px">
-            <el-option
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="">
-          <el-select v-model="searchForm.package" placeholder="服务套餐" clearable style="width: 120px">
-            <el-option
-              v-for="item in packageOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">
-            <el-icon><Search /></el-icon>
-            搜索
-          </el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
+  <div class="order-container">
+    <div class="page-header">
+      <h1 class="page-title">订单管理</h1>
+      <el-button type="primary" @click="handleAdd">
+        <el-icon><Plus /></el-icon>
+        新增订单
+      </el-button>
     </div>
 
-    <!-- 列表区域 -->
     <div class="card">
-      <!-- Tab 切换 -->
-      <el-tabs v-model="activeTab" class="order-tabs">
-        <el-tab-pane label="全部 (156)" name="all" />
-        <el-tab-pane label="待确认 (12)" name="pending" />
-        <el-tab-pane label="待接运 (5)" name="pickup" />
-        <el-tab-pane label="服务中 (8)" name="processing" />
-        <el-tab-pane label="已完成 (131)" name="completed" />
-      </el-tabs>
+      <div class="search-bar">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="搜索订单号/客户名称"
+          clearable
+          style="width: 250px"
+          @keyup.enter="handleSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-select
+          v-model="searchStatus"
+          placeholder="订单状态"
+          clearable
+          style="width: 150px; margin-left: 16px"
+        >
+          <el-option
+            v-for="(item, key) in statusMap"
+            :key="key"
+            :label="item.text"
+            :value="Number(key)"
+          />
+        </el-select>
+        <el-button type="primary" style="margin-left: 16px" @click="handleSearch">搜索</el-button>
+      </div>
 
-      <!-- 表格 -->
-      <el-table
-        v-loading="loading"
-        :data="orders"
-        style="width: 100%"
-        :header-cell-style="{ backgroundColor: '#FAF8F5', color: '#4A4A4A' }"
-        @selection-change="handleSelectionChange"
-      >
-        <el-table-column type="selection" width="50" />
-        
-        <el-table-column prop="orderNo" label="订单编号" min-width="150">
+      <el-table :data="orders" v-loading="loading" style="width: 100%; margin-top: 20px">
+        <el-table-column prop="orderNo" label="订单号" min-width="150" />
+        <el-table-column prop="customerName" label="客户" min-width="100" />
+        <el-table-column prop="petName" label="宠物" min-width="100" />
+        <el-table-column prop="packageName" label="套餐" min-width="120" />
+        <el-table-column prop="totalAmount" label="金额" min-width="100">
           <template #default="{ row }">
-            <span class="order-no">{{ row.orderNo }}</span>
+            <span style="color: #E8B89D; font-weight: 500">¥{{ row.totalAmount?.toLocaleString() || 0 }}</span>
           </template>
         </el-table-column>
-
-        <el-table-column label="客户" min-width="120">
+        <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <div class="customer-info">
-              <div class="customer-name">{{ row.customer }}</div>
-              <div class="customer-phone">{{ row.customerPhone }}</div>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="宠物" min-width="140">
-          <template #default="{ row }">
-            <div class="pet-info">
-              <span class="pet-name">{{ row.pet }}</span>
-              <span class="pet-type">{{ row.petType }}</span>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="package" label="套餐" min-width="100" />
-
-        <el-table-column label="金额" min-width="120">
-          <template #default="{ row }">
-            <div class="amount-info">
-              <div class="amount">¥{{ row.amount.toLocaleString() }}</div>
-              <div v-if="row.paidAmount < row.amount" class="paid">
-                已付 ¥{{ row.paidAmount }}
-              </div>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="预约时间" min-width="150">
-          <template #default="{ row }">
-            {{ row.appointmentTime }}
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="status" label="状态" min-width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)" effect="light" round>
-              {{ getStatusText(row.status) }}
+            <el-tag :type="statusMap[row.status]?.type as any" effect="light">
+              {{ statusMap[row.status]?.text || '未知' }}
             </el-tag>
           </template>
         </el-table-column>
-
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column prop="serviceDate" label="服务日期" min-width="120" />
+        <el-table-column prop="createdAt" label="创建时间" min-width="160" />
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleView(row)">
-              详情
+            <el-button type="primary" link @click="handleDetail(row)">
+              <el-icon><View /></el-icon> 详情
             </el-button>
-            <el-button
-              v-if="row.status === 'pending'"
-              type="success"
-              link
-              @click="handleConfirm(row)"
+            <el-button 
+              v-if="row.status === 0" 
+              type="success" 
+              link 
+              @click="handlePay(row)"
             >
-              确认
+              确认支付
             </el-button>
-            <el-dropdown trigger="click">
-              <el-button type="info" link>
-                <el-icon><More /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item>派单</el-dropdown-item>
-                  <el-dropdown-item>打印</el-dropdown-item>
-                  <el-dropdown-item divided>取消订单</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            <el-button 
+              v-if="row.status === 1 || row.status === 2" 
+              type="primary" 
+              link 
+              @click="handleComplete(row)"
+            >
+              完成
+            </el-button>
+            <el-button 
+              v-if="row.status === 0" 
+              type="danger" 
+              link 
+              @click="handleCancel(row)"
+            >
+              取消
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <!-- 底部操作栏 -->
-      <div class="table-footer">
-        <div class="batch-actions">
-          <el-checkbox
-            :indeterminate="selectedOrders.length > 0 && selectedOrders.length < orders.length"
-            :model-value="selectedOrders.length === orders.length && orders.length > 0"
-          >
-            全选
-          </el-checkbox>
-          <el-button size="small" :disabled="selectedOrders.length === 0" @click="handleBatchConfirm">
-            批量确认
-          </el-button>
-          <el-button size="small" :disabled="selectedOrders.length === 0">
-            批量派单
-          </el-button>
-          <el-button size="small" @click="handleExport">
-            <el-icon><Download /></el-icon>
-            导出Excel
-          </el-button>
-        </div>
-
+      <!-- 分页 -->
+      <div class="pagination-wrapper">
         <el-pagination
           v-model:current-page="pagination.page"
           v-model:page-size="pagination.pageSize"
           :page-sizes="[10, 20, 50, 100]"
-          :total="pagination.total"
+          :total="total"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange"
           @current-change="handlePageChange"
         />
       </div>
     </div>
+
+    <!-- 新增订单弹窗 -->
+    <el-dialog
+      v-model="dialogVisible"
+      title="新增订单"
+      width="500px"
+      @close="handleClose"
+    >
+      <el-form
+        ref="formRef"
+        :model="formData"
+        :rules="rules"
+        label-width="80px"
+      >
+        <el-form-item label="客户" prop="customerId">
+          <el-select 
+            v-model="formData.customerId" 
+            placeholder="请选择客户" 
+            style="width: 100%"
+            @change="handleCustomerChange"
+          >
+            <el-option
+              v-for="item in customerOptions"
+              :key="item.id"
+              :label="item.name + ' - ' + item.phone"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="宠物" prop="petId">
+          <el-select 
+            v-model="formData.petId" 
+            placeholder="请先选择客户" 
+            style="width: 100%"
+            :disabled="!formData.customerId"
+          >
+            <el-option
+              v-for="item in petOptions"
+              :key="item.id"
+              :label="item.name + ' (' + item.species + ')'"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="服务套餐" prop="packageId">
+          <el-select v-model="formData.packageId" placeholder="请选择服务套餐" style="width: 100%">
+            <el-option
+              v-for="item in packageOptions"
+              :key="item.id"
+              :label="item.name + ' - ¥' + item.price"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="服务日期" prop="serviceDate">
+          <el-date-picker
+            v-model="formData.serviceDate"
+            type="date"
+            placeholder="选择服务日期"
+            style="width: 100%"
+            value-format="YYYY-MM-DD"
+          />
+        </el-form-item>
+        <el-form-item label="备注" prop="remark">
+          <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="请输入备注" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="handleClose">取消</el-button>
+        <el-button type="primary" @click="handleSubmit">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 支付确认弹窗 -->
+    <el-dialog
+      v-model="payDialogVisible"
+      title="确认支付"
+      width="400px"
+    >
+      <el-form label-width="80px">
+        <el-form-item label="支付金额">
+          <el-input-number v-model="payForm.paidAmount" :min="0" :precision="2" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="支付方式">
+          <el-select v-model="payForm.payMethod" style="width: 100%">
+            <el-option
+              v-for="item in payMethods"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="payDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitPay">确认支付</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
-<script lang="ts">
-import { Search, More, Download } from '@element-plus/icons-vue'
-export default {
-  data() {
-    return { Search, More, Download }
-  }
-}
-</script>
-
 <style lang="scss" scoped>
-.order-list-container {
+.order-container {
   animation: fadeIn 0.3s ease;
 }
 
-.search-card {
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: var(--spacing-lg);
-  
-  :deep(.el-form-item) {
-    margin-bottom: 0;
-    margin-right: var(--spacing-md);
-  }
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+  margin: 0;
 }
 
 .card {
@@ -438,79 +481,15 @@ export default {
   padding: var(--spacing-lg);
 }
 
-.order-tabs {
-  :deep(.el-tabs__header) {
-    margin-bottom: var(--spacing-md);
-  }
-
-  :deep(.el-tabs__item.is-active) {
-    color: var(--color-primary);
-  }
-
-  :deep(.el-tabs__active-bar) {
-    background-color: var(--color-primary);
-  }
-}
-
-.order-no {
-  font-family: 'Monaco', 'Consolas', monospace;
-  font-size: 13px;
-  color: var(--color-primary);
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-.customer-info,
-.pet-info {
-  display: flex;
-  flex-direction: column;
-
-  .customer-name,
-  .pet-name {
-    font-weight: 500;
-    color: var(--text-color-primary);
-  }
-
-  .customer-phone,
-  .pet-type {
-    font-size: 12px;
-    color: var(--text-color-secondary);
-  }
-}
-
-.amount-info {
-  .amount {
-    font-weight: 600;
-    color: var(--text-color-primary);
-  }
-
-  .paid {
-    font-size: 12px;
-    color: var(--color-success);
-  }
-}
-
-.table-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--border-color-light);
-}
-
-.batch-actions {
+.search-bar {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
 }
 
-:deep(.el-table) {
-  --el-table-border-color: var(--border-color-light);
-  --el-table-row-hover-bg-color: var(--bg-color-page);
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
 }
 
 @keyframes fadeIn {
