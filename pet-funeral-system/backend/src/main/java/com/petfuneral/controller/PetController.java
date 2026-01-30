@@ -30,11 +30,11 @@ public class PetController {
     @GetMapping
     public Result<PageResult<Pet>> getPetPage(
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) Long customerId) {
-        IPage<Pet> result = petService.getPetPage(page, size, keyword, status, customerId);
+        IPage<Pet> result = petService.getPetPage(page, pageSize, keyword, status, customerId);
         return Result.success(PageResult.of(result));
     }
 

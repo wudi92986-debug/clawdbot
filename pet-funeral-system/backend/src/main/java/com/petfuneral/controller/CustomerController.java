@@ -7,6 +7,7 @@ import com.petfuneral.entity.Customer;
 import com.petfuneral.service.CustomerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,9 +26,9 @@ public class CustomerController {
     @GetMapping
     public Result<PageResult<Customer>> getCustomerPage(
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) String keyword) {
-        IPage<Customer> result = customerService.getCustomerPage(page, size, keyword);
+        IPage<Customer> result = customerService.getCustomerPage(page, pageSize, keyword);
         return Result.success(PageResult.of(result));
     }
 
@@ -35,6 +36,28 @@ public class CustomerController {
     @GetMapping("/{id}")
     public Result<Customer> getCustomerDetail(@PathVariable Long id) {
         return Result.success(customerService.getCustomerDetail(id));
+    }
+
+    @Operation(summary = "新增客户")
+    @PostMapping
+    public Result<Customer> createCustomer(@Valid @RequestBody Customer customer) {
+        customerService.save(customer);
+        return Result.success(customer);
+    }
+
+    @Operation(summary = "更新客户")
+    @PutMapping("/{id}")
+    public Result<Customer> updateCustomer(@PathVariable Long id, @Valid @RequestBody Customer customer) {
+        customer.setId(id);
+        customerService.updateById(customer);
+        return Result.success(customer);
+    }
+
+    @Operation(summary = "删除客户")
+    @DeleteMapping("/{id}")
+    public Result<Void> deleteCustomer(@PathVariable Long id) {
+        customerService.removeById(id);
+        return Result.ok("删除成功");
     }
 
     @Operation(summary = "统计客户数量")

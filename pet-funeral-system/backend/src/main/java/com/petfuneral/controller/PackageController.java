@@ -1,5 +1,8 @@
 package com.petfuneral.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.petfuneral.common.response.PageResult;
 import com.petfuneral.common.response.Result;
 import com.petfuneral.entity.ServicePackage;
 import com.petfuneral.service.PackageService;
@@ -27,10 +30,14 @@ public class PackageController {
         return Result.success(packageService.getActivePackages());
     }
 
-    @Operation(summary = "获取所有套餐 (管理端)")
+    @Operation(summary = "分页获取所有套餐 (管理端)")
     @GetMapping
-    public Result<List<ServicePackage>> getAllPackages() {
-        return Result.success(packageService.getAllPackages());
+    public Result<PageResult<ServicePackage>> getAllPackages(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String keyword) {
+        IPage<ServicePackage> result = packageService.getPackagePage(page, pageSize, keyword);
+        return Result.success(PageResult.of(result));
     }
 
     @Operation(summary = "获取套餐详情")
@@ -51,6 +58,13 @@ public class PackageController {
         servicePackage.setId(id);
         packageService.updatePackage(servicePackage);
         return Result.ok("更新成功");
+    }
+
+    @Operation(summary = "删除套餐")
+    @DeleteMapping("/{id}")
+    public Result<Void> deletePackage(@PathVariable Long id) {
+        packageService.removeById(id);
+        return Result.ok("删除成功");
     }
 
     @Operation(summary = "上架/下架套餐")

@@ -136,12 +136,31 @@ public class OrderService {
     @Transactional
     public void completeOrder(Long orderId) {
         ServiceOrder order = getOrderDetail(orderId);
-        if (order.getStatus() != 3) {
+        // 允许从已支付(1)或服务中(2)状态完成订单
+        if (order.getStatus() < 1 || order.getStatus() > 2) {
             throw new BusinessException("订单状态不正确");
         }
 
-        order.setStatus(4); // 已完成
+        order.setStatus(3); // 已完成
         order.setCompletedAt(LocalDateTime.now());
+        orderMapper.updateById(order);
+    }
+
+    /**
+     * 确认支付
+     */
+    @Transactional
+    public void confirmPayment(Long orderId, Integer payMethod, BigDecimal paidAmount) {
+        ServiceOrder order = getOrderDetail(orderId);
+        if (order.getPayStatus() != 0) {
+            throw new BusinessException("订单已支付");
+        }
+
+        order.setPayStatus(1); // 已支付
+        order.setPayMethod(payMethod);
+        order.setPaidAmount(paidAmount);
+        order.setPayTime(LocalDateTime.now());
+        order.setStatus(1); // 已支付状态
         orderMapper.updateById(order);
     }
 

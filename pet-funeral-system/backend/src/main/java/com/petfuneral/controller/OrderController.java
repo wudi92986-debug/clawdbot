@@ -30,10 +30,10 @@ public class OrderController {
     @GetMapping
     public Result<PageResult<OrderListDTO>> getOrderPage(
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) String keyword) {
-        IPage<OrderListDTO> result = orderService.getOrderPage(page, size, status, keyword);
+        IPage<OrderListDTO> result = orderService.getOrderPage(page, pageSize, status, keyword);
         return Result.success(PageResult.of(result));
     }
 
@@ -60,6 +60,20 @@ public class OrderController {
             @AuthenticationPrincipal UserPrincipal user) {
         orderService.confirmOrder(id, user.getUserId());
         return Result.ok("订单已确认");
+    }
+
+    @Operation(summary = "确认支付")
+    @PostMapping("/{id}/pay")
+    public Result<Void> confirmPayment(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, Object> params) {
+        Integer payMethod = (Integer) params.get("payMethod");
+        Number paidAmountNum = (Number) params.get("paidAmount");
+        java.math.BigDecimal paidAmount = paidAmountNum != null 
+            ? java.math.BigDecimal.valueOf(paidAmountNum.doubleValue()) 
+            : java.math.BigDecimal.ZERO;
+        orderService.confirmPayment(id, payMethod, paidAmount);
+        return Result.ok("支付确认成功");
     }
 
     @Operation(summary = "取消订单")

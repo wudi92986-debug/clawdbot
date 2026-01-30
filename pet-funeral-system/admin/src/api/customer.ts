@@ -20,7 +20,7 @@ export interface CustomerQuery {
 
 // 获取客户列表
 export const getCustomerList = (params: CustomerQuery) => {
-  return request.get('/customers', { params })
+  return request.get<any>('/customers', { params })
 }
 
 // 获取客户详情

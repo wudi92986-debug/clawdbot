@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 
 // 创建 axios 实例
 const service: AxiosInstance = axios.create({
-  baseURL: '/api',  // 使用代理，避免跨域问题
+  baseURL: '/api/v1',  // 使用代理，避免跨域问题
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json'
